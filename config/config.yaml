@@ -1,0 +1,46 @@
+check_interval: 5.0
+
+nodes:
+    imu_node:
+        name: "myahrs_ros2_driver"
+        package: "myahrs_ros2_driver"
+        executable: "myahrs_ros2_driver_noviewer.launch.py"
+        restart_attempts: 10
+        topics:
+            - name: "/imu/data"
+              msg_type: "sensor_msgs/msg/Imu"
+              timeout: 2.0
+              required: true
+            # - name: "/imu/mag"
+            #   timeout: 0.02
+            #   required: true
+            # - name: "/imu/temperature"
+            #   timeout: 0.02
+            #   required: true
+
+    gps_node:
+        name: "nmea_navsat_driver"
+        package: "nmea_navsat_driver"
+        executable: "ublox_serial.launch.py"
+        restart_attempts: 10
+        topics:
+            - name: "/ublox/fix"
+              msg_type: "sensor_msgs/msg/NavSatFix"
+              timeout: 2.0
+              required: true
+            # - name: "/ublox/vel"
+            #   timeout: 0.2
+            #   required: true
+
+    # localizer_node:
+    #     name: "localizer_node"
+    #     package: "surface_gps"
+    #     executable: "localizer.launch.py"
+    #     restart_attempts: 10
+    #     dependencies:
+    #         - "imu_node"
+    #         - "gps_node"
+    #     topics:
+    #         - name: "/surface_gps/pose_world"
+    #           timeout: 0.2
+    #           required: true
