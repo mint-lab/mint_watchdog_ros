@@ -55,9 +55,10 @@ void WatchdogNode::createTopicSubscriptions()
 
 void WatchdogNode::checkCallback()
 {
-    for (const auto& [node_name, _] : watchdog_->getNodeConfigs())
+    for (const auto& [node_name, node_config] : watchdog_->getNodeConfigs())
     {
         WatchdogSystem::NodeStatus status = watchdog_->checkNode(node_name);
+        auto& config = node_config;
 
         switch(status)
         {
@@ -69,8 +70,10 @@ void WatchdogNode::checkCallback()
 
             case WatchdogSystem::NodeStatusFlag::NOT_RUNNING:
                 RCLCPP_WARN(this->get_logger(),
-                    "Node %s is not running, attempting to start",
-                    node_name.c_str());
+                    "Node %s is not running, attempting to start. attempts: %d/%d",
+                    node_name.c_str(),
+                    config.current_attempts,
+                    config.restart_attempts);
                 break;
 
             case WatchdogSystem::NodeStatusFlag::TOPIC_UNHEALTHY:
@@ -83,8 +86,9 @@ void WatchdogNode::checkCallback()
                 RCLCPP_ERROR(this->get_logger(),
                     "Node %s has exceeded maximum restart attempts",
                     node_name.c_str());
-                //TODO: Restart strategy
-                break;
+                check_timer_->cancel();
+                rclcpp::shutdown();
+                return;
 
             case WatchdogSystem::NodeStatusFlag::NODE_HEALTHY:
                 RCLCPP_DEBUG(this->get_logger(),

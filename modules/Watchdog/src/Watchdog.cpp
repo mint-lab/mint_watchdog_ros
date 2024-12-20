@@ -75,11 +75,19 @@ WatchdogSystem::NodeStatus WatchdogSystem::checkNode(const std::string& node_nam
     if (!is_running)
     {
         node_config.is_running = false;
-        if (canStartNode(node_name))
+        if (node_config.current_attempts < node_config.restart_attempts)
         {
-            startNode(node_name);
+            if (canStartNode(node_name))
+            {
+                node_config.current_attempts++;
+                startNode(node_name);
+            }
+            return WatchdogSystem::NodeStatusFlag::NOT_RUNNING;
         }
-        return WatchdogSystem::NodeStatusFlag::NOT_RUNNING;
+        else
+        {
+            return WatchdogSystem::NodeStatusFlag::RESTART_ATTEMPTS_EXCEEDED;
+        }
     }
 
     if (!checkTopics(node_config))
@@ -176,7 +184,6 @@ void WatchdogSystem::startNode(const std::string& node_name)
     if (result == 0)
     {
         node_config.is_running = true;
-        node_config.current_attempts = 0;
     }
 }
 
@@ -190,8 +197,6 @@ void WatchdogSystem::restartNode(const std::string& node_name)
         std::system(kill_cmd.c_str());
     }
 
-    node_config.current_attempts++;
     node_config.is_running = false;
-
     startNode(node_name);
 }
