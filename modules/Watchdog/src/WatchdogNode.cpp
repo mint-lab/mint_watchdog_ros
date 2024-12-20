@@ -52,29 +52,50 @@ void WatchdogNode::createTopicSubscriptions()
 
 void WatchdogNode::checkCallback()
 {
-    // std::vector<std::string> unhealthy_nodes;
-
     for (const auto& [node_name, _] : watchdog_->getNodeConfigs())
     {
-        if (!watchdog_->checkNode(node_name))
+        WatchdogSystem::NodeStatus status = watchdog_->checkNode(node_name);
+
+        switch(status)
         {
-            // unhealthy_nodes.push_back(node_name);
-            RCLCPP_WARN(this->get_logger(),
-                "Node %s is not healthy", node_name.c_str());
+            case WatchdogSystem::NodeStatusFlag::NONE:
+                RCLCPP_ERROR(this->get_logger(),
+                    "Node %s is not configured in watchdog system",
+                    node_name.c_str());
+                break;
+
+            case WatchdogSystem::NodeStatusFlag::NOT_RUNNING:
+                RCLCPP_WARN(this->get_logger(),
+                    "Node %s is not running, attempting to start",
+                    node_name.c_str());
+                break;
+
+            case WatchdogSystem::NodeStatusFlag::TOPIC_UNHEALTHY:
+                RCLCPP_WARN(this->get_logger(),
+                    "Node %s has unhealthy topics, attempting restart",
+                    node_name.c_str());
+                break;
+
+            case WatchdogSystem::NodeStatusFlag::RESTART_ATTEMPTS_EXCEEDED:
+                RCLCPP_ERROR(this->get_logger(),
+                    "Node %s has exceeded maximum restart attempts",
+                    node_name.c_str());
+                //TODO: Restart strategy
+                break;
+
+            case WatchdogSystem::NodeStatusFlag::NODE_HEALTHY:
+                RCLCPP_DEBUG(this->get_logger(),
+                    "Node %s is healthy", node_name.c_str());
+                break;
+
+            // case WatchdogSystem::NodeStatusFlag::DEPENDENCY_UNHEALTHY:
+            //     RCLCPP_WARN(this->get_logger(),
+            //         "Node %s has unhealthy dependencies",
+            //         node_name.c_str());
+            //     // TODO: Recovery strategy
+            //     break;
         }
     }
-
-    // if (!unhealthy_nodes.empty())
-    // {
-    //     for (const auto& node_name: unhealthy_nodes)
-    //     {
-    //         RCLCPP_WARN(this->get_logger(),
-    //             "Restarting node %s", node_name.c_str());
-    //         watchdog_->restartNode(node_name);
-    //         std::this_thread::sleep_for(std::chrono::seconds(2));
-    //     }
-    //     unhealthy_nodes.clear();
-    // }
 }
 
 void WatchdogNode::topicCallback(const std::string& topic_name)

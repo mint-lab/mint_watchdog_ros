@@ -59,12 +59,14 @@ bool WatchdogSystem::isNodeRunning(const std::string& node_name) const
     return (result == 0);
 }
 
-bool WatchdogSystem::checkNode(const std::string& node_name)
+WatchdogSystem::NodeStatus WatchdogSystem::checkNode(const std::string& node_name)
 {
+    WatchdogSystem::NodeStatus status = static_cast<WatchdogSystem::NodeStatus>(WatchdogSystem::NodeStatusFlag::NONE);
+
     auto it = node_configs_.find(node_name);
     if (it == node_configs_.end())
     {
-        return false;
+        return WatchdogSystem::NodeStatusFlag::NONE;
     }
 
     auto& node_config = it->second;
@@ -77,7 +79,7 @@ bool WatchdogSystem::checkNode(const std::string& node_name)
         {
             startNode(node_name);
         }
-        return false;
+        return WatchdogSystem::NodeStatusFlag::NOT_RUNNING;
     }
 
     if (!checkTopics(node_config))
@@ -86,24 +88,24 @@ bool WatchdogSystem::checkNode(const std::string& node_name)
         {
             node_config.current_attempts++;
             restartNode(node_name);
-            return false;
+            return WatchdogSystem::NodeStatusFlag::TOPIC_UNHEALTHY;
         }
         else
         {
-            std::cerr << "Node " << node_name << " has exceeded the maximum number of restart attempts" << std::endl;
-            return false;
+            // std::cerr << "Node " << node_name << " has exceeded the maximum number of restart attempts" << std::endl;
+            return WatchdogSystem::NodeStatusFlag::RESTART_ATTEMPTS_EXCEEDED;
         }
     }
 
     node_config.is_running = true;
     node_config.current_attempts = 0;
-    return true;
+    return WatchdogSystem::NodeStatusFlag::NODE_HEALTHY;
 
     // // Check dependencies first
     // if (!checkDependencies(node_config.dependencies))
     // {
 
-    //     return false;
+    //     return WatchdogSystem::NodeStatusFlag::DEPENDENCY_UNHEALTHY;
     // }
 }
 

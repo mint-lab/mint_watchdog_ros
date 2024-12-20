@@ -43,6 +43,21 @@ class WatchdogSystem
 {
 public:
     /**
+     * @brief Flags for node status checks
+     */
+    enum NodeStatusFlag: uint16_t
+    {
+        NONE = 0, ///< Not configured
+        NOT_RUNNING = 1, ///< Node is running
+        TOPIC_UNHEALTHY = 2, ///< Topic is unhealthy
+        // DEPENDENCY_UNHEALTHY = 3, ///< Dependency is unhealthy //TODO
+        RESTART_ATTEMPTS_EXCEEDED = 4, ///< Restart attempts exceeded
+        NODE_HEALTHY = 5, ///< Node is healthy
+    };
+
+    using NodeStatus = uint16_t; ///< Node status type
+
+    /**
      * @brief Construct a new Watchdog System object
      * @param config_path Path to the configuration file
      */
@@ -59,7 +74,7 @@ public:
      * @param node_name Name of the node
      * @return True if the node is running, false otherwise
      */
-    bool checkNode(const std::string& node_name);
+    WatchdogSystem::NodeStatus checkNode(const std::string& node_name);
 
     /**
      * @brief Update the timestamp for a topic
