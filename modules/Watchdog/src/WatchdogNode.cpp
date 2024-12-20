@@ -1,5 +1,8 @@
 #include "WatchdogNode.hpp"
 
+#define ANSI_GREEN "\033[32m"
+#define ANSI_RESET "\033[0m"
+
 WatchdogNode::WatchdogNode()
     : Node("watchdog_node")
 {
@@ -85,7 +88,7 @@ void WatchdogNode::checkCallback()
 
             case WatchdogSystem::NodeStatusFlag::NODE_HEALTHY:
                 RCLCPP_DEBUG(this->get_logger(),
-                    "Node %s is healthy", node_name.c_str());
+                    ANSI_GREEN "Node %s is healthy" ANSI_RESET, node_name.c_str());
                 break;
 
             // case WatchdogSystem::NodeStatusFlag::DEPENDENCY_UNHEALTHY:
